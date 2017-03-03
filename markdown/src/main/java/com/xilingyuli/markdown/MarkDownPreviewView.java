@@ -47,7 +47,7 @@ public class MarkDownPreviewView extends WebView {
     private void init()
     {
         getSettings().setJavaScriptEnabled(true);
-        getSettings().setUseWideViewPort(true);
+        //getSettings().setUseWideViewPort(true);
         setVerticalScrollBarEnabled(false);
         setHorizontalScrollBarEnabled(false);
         setWebViewClient(new WebViewClient() {

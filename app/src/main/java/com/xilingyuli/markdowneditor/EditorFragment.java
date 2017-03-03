@@ -61,7 +61,7 @@ public class EditorFragment extends Fragment {
         ButterKnife.bind(this,view);
         titleView.setText(title);
         contentView.setText(content);
-        ((EditorActivity)getActivity()).setEditorView(contentView);
+        ((MainActivity)getActivity()).setEditorView(contentView);
         return view;
     }
 

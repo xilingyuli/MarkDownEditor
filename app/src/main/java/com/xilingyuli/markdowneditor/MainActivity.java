@@ -1,13 +1,20 @@
 package com.xilingyuli.markdowneditor;
 
+import android.Manifest;
 import android.animation.LayoutTransition;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.DataSetObserver;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputEditText;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +24,8 @@ import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.xilingyuli.markdown.MarkDownController;
 import com.xilingyuli.markdown.MarkDownEditorView;
@@ -24,14 +33,20 @@ import com.xilingyuli.markdown.MarkDownPreviewView;
 import com.xilingyuli.markdown.OnPreInsertListener;
 import com.xilingyuli.markdown.ToolsAdapter;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 /**
  * Markdown Blog Edit And Preview
  */
 public class MainActivity extends AppCompatActivity implements OnPreInsertListener {
 
+    public static String ROOT_PATH;
     public static final String TITLE = "title";
     public static final String CONTENT = "content";
 
@@ -54,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements OnPreInsertListen
         setContentView(R.layout.activity_editor);
         ButterKnife.bind(this);
 
+        ROOT_PATH = Environment.getExternalStorageDirectory()+ File.separator + "markdown" + File.separator;
         imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
 
         //保持viewPager随toolbar动画移动
@@ -152,9 +168,99 @@ public class MainActivity extends AppCompatActivity implements OnPreInsertListen
         markDownController.setOnPreInsertListener(this);
     }
 
+    @OnClick(R.id.fab)
+    public void onChangeClick()
+    {
+        if(viewPager!=null) {
+            int index = 1 - viewPager.getCurrentItem();
+            viewPager.setCurrentItem(index, false);  //设为true不能正常切换，原因待探寻
+        }
+    }
+
+    @OnClick(R.id.save)
+    public void onSaveClick()
+    {
+        saveFile();
+    }
+
+    public boolean saveFile()
+    {
+        if (Build.VERSION.SDK_INT >= 23) {
+            int checkCallPhonePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (checkCallPhonePermission != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this,"需要SD卡读写权限，请重试",Toast.LENGTH_SHORT).show();
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                return false;
+            }
+        }
+        if (editorFragment.getTitle().isEmpty())
+        {
+            Toast.makeText(this,"标题不能为空",Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        FileOutputStream fos = null;
+        try {
+            File dir = new File(ROOT_PATH);
+            if(!dir.exists())
+                dir.mkdir();
+            File file = new File(ROOT_PATH+editorFragment.getTitle()+".md");
+            file.createNewFile();
+            fos = new FileOutputStream(file);
+            fos.write(editorView.getText().toString().getBytes());
+            fos.flush();
+            Toast.makeText(this,"保存成功",Toast.LENGTH_SHORT).show();
+            return true;
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+            Toast.makeText(this,"存储失败",Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        finally {
+            try {
+                if(fos!=null)
+                    fos.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        new AlertDialog.Builder(this)
+                .setMessage("是否保存为MarkDown文件?")
+                .setPositiveButton("保存", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if(saveFile())
+                            MainActivity.super.onBackPressed();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        MainActivity.super.onBackPressed();
+                    }
+                })
+                .show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode==0 && resultCode==RESULT_OK)
+            if(markDownController!=null)
+                markDownController.insertImage(data.getData().toString());
+    }
+
     @Override
     public void onPreInsertImage() {
-
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_PICK);// Pick an item fromthe
+        intent.setType("image/*");// 从所有图片中进行选择
+        startActivityForResult(intent, 0);
     }
 
     @Override
