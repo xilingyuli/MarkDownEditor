@@ -1,0 +1,29 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:showDividers="middle"
+    android:divider="@drawable/divider_simple"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.xilingyuli.androidtips.blog.EditorFragment">
+
+    <EditText
+        android:id="@+id/title"
+        android:hint="标题"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:padding="@dimen/simple_padding"
+        android:background="@null"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <com.xilingyuli.markdown.MarkDownEditorView
+        android:id="@+id/content"
+        android:hint="正文"
+        android:padding="@dimen/simple_padding"
+        android:gravity="top|start"
+        android:background="@null"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>
